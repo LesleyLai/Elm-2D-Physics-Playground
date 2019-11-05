@@ -9,47 +9,58 @@ import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
 
+import Array exposing (Array)
+
+import Vector2 exposing (Vec2)
+
+
+type alias Particle =
+    { position: Vec2
+    , velocity: Vec2
+    }
 
 type alias Model =
-    { count : Float }
+    { particles : Array Particle }
 
 
 type Msg
     = Frame Float
 
+initParticles : Array Particle
+initParticles = Array.initialize 1 (\x -> { position = { x = 0, y = 0 }
+                                          , velocity = { x = 0, y = 1 }
+                                          })
 
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \() -> ( { count = 0 }, Cmd.none )
+        { init = \_ -> ({ particles = initParticles }, Cmd.none )
         , view = view
-        , update =
-            \msg model ->
-                case msg of
-                    Frame _ ->
-                        ( { model | count = model.count + 1 }, Cmd.none )
+        , update = update
         , subscriptions = \model -> onAnimationFrameDelta Frame
         }
 
+updateParticle : Particle -> Particle
+updateParticle particle =
+    { particle
+        | position = Vector2.add particle.position particle.velocity }
 
-width =
-    400
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
+    case msg of
+        Frame _ ->
+            let newParticles = Array.map updateParticle model.particles
+            in
+            ( { particles = newParticles }, Cmd.none )
 
-
-height =
-    400
-
-
-centerX =
-    width / 2
-
-
-centerY =
-    height / 2
+width = 400
+height = 400
+centerX = width / 2
+centerY = height / 2
 
 
 view : Model -> Html Msg
-view { count } =
+view { particles } =
     div
         [ style "display" "flex"
         , style "justify-content" "center"
@@ -59,7 +70,7 @@ view { count } =
             ( width, height )
             [ style "border" "10px solid rgba(0,0,0,0.1)" ]
             [ clearScreen
-            , render count
+            , render particles
             ]
         ]
 
@@ -67,23 +78,18 @@ view { count } =
 clearScreen =
     shapes [ fill Color.white ] [ rect ( 0, 0 ) width height ]
 
-
-render count =
+render: Array Particle -> Canvas.Renderable
+render particles =
     let
         size =
-            width / 3
-
-        x =
-            -(size / 2)
-
-        y =
-            -(size / 2)
+            width / 30
     in
     shapes
         [ transform
             [ translate centerX centerY
-            , rotate (degrees (count * 3))
             ]
-        , fill (Color.hsl (degrees (count / 4)) 0.3 0.7)
+        , fill (Color.hsl 0.3 0.3 0.7)
         ]
-        [ rect ( x, y ) size size ]
+        (Array.toList (Array.map (\particle ->
+                            circle ( particle.position.x, particle.position.y ) size
+        ) particles))
