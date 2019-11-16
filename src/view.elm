@@ -15,12 +15,12 @@ import Canvas.Settings.Advanced exposing (..)
 
 import Color
 
-import Vector2
-
 import Html exposing (Html)
 import Html.Attributes
 
-import Model exposing (Model, Particle)
+import Physics2d.World exposing (Particle, World)
+
+import Model exposing (Model)
 
 type Msg
     = Frame Float
@@ -36,14 +36,14 @@ view model =
         (mainRow model)
 
 mainRow : Model -> Element Msg
-mainRow { particles } =
+mainRow { world } =
     Element.row
         [ Element.width Element.fill
         , Element.centerY
         , Element.spacing 30
         ]
         [ toolsBar
-        , (canvas 1024 800 particles)
+        , (canvas 1024 800 world)
         , panels
         ]
 
@@ -123,8 +123,8 @@ objectPropertiesView =
              }
         ]
 
-canvas: Int -> Int -> Array Particle -> Element Msg
-canvas width height particles =
+canvas: Int -> Int -> World -> Element Msg
+canvas width height world =
     let widthF = toFloat width
         heightF = toFloat height
     in
@@ -132,7 +132,7 @@ canvas width height particles =
         ( width, height )
         [ ]
         [ clearScreen widthF heightF
-        , render widthF heightF particles
+        , render widthF heightF world
         ]
     |> Element.html
 
@@ -140,8 +140,8 @@ clearScreen : Float -> Float -> Canvas.Renderable
 clearScreen width height =
     shapes [ fill (Color.rgb 0.6 0.6 0.6) ] [ rect ( 0, 0 ) width height ]
 
-render: Float -> Float -> Array Particle -> Canvas.Renderable
-render width height particles =
+render: Float -> Float -> World -> Canvas.Renderable
+render width height world =
     let
         size = width / 30
         centerX = width / 2
@@ -153,6 +153,7 @@ render width height particles =
             ]
         , fill (Color.hsl 0.3 0.3 0.7)
         ]
-        (Array.toList (Array.map (\particle ->
-                            circle ( particle.position.x, particle.position.y ) size
-        ) particles))
+        (world
+        |> Physics2d.World.getParticles
+        |> List.map (\particle ->
+                         circle ( particle.position.x, particle.position.y ) size))

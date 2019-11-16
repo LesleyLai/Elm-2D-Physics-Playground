@@ -1,4 +1,4 @@
-module Vector2 exposing (Vec2, add, setX, setY, asXIn, asYIn)
+module Physics2d.Vector2 exposing (Vec2, add, setX, setY, asXIn, asYIn)
 
 type alias Vec2 =
     { x : Float
